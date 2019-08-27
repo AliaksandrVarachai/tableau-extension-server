@@ -1,0 +1,29 @@
+{
+  "name": "tableau-extension-server",
+  "version": "1.0.0",
+  "description": "Tableau extension API server",
+  "main": "app.js",
+  "dependencies": {
+    "https": "^1.0.0",
+    "mongodb": "^3.3.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AliaksandrVarachai/tableau-extension-server.git"
+  },
+  "keywords": [
+    "Tableau",
+    "Extension",
+    "API"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AliaksandrVarachai/tableau-extension-server/issues"
+  },
+  "homepage": "https://github.com/AliaksandrVarachai/tableau-extension-server#readme"
+}
