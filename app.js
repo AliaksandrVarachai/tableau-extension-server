@@ -1,17 +1,19 @@
+const https = require('https');
+const fs = require('fs');
+
 const MongoClient = require('mongodb').MongoClient;
 
-const url = 'mongodb://localhost:27017';
-
+const serverDBUrl = 'mongodb://localhost:27017';
 const dbName = 'tableau-extension-guided-tour';
-
 const collectionName = 'tours';
 
+const port = 3000;
 
-MongoClient.connect(url, function(err, client) {
+MongoClient.connect(serverDBUrl, function(err, client) {
   if (err)
       throw err;
 
-  console.log(`Connected successfully to server ${url}`);
+  console.log(`Connected successfully to server ${serverDBUrl}`);
 
   const db = client.db(dbName);
   const collection = db.collection(collectionName);
@@ -27,3 +29,10 @@ MongoClient.connect(url, function(err, client) {
   client.close();
 
 });
+
+/**  Create a server and listen  **/
+
+https.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('Hello world');
+}).listen(port);
