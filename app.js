@@ -26,74 +26,108 @@ Promise.all([
 
   const server = https.createServer(httpsOptions,(req, res) => {
     const { headers, method, url } = req;
+    const parsedUrl = new URL(url, 'https://fake-hostname.com');
+    const pathname = parsedUrl.pathname.toLowerCase();
+    const params = new URLSearchParams(parsedUrl.search);
 
     if (method === 'GET') {
-      if ((/^\/api\/tours\/getTour\//i).test(url)) {
-        console.log(url)
-        // TODO: eject id & search param => then pass them to mongoClient
-        const uuid = '123-456';
-        collection.findOne({id: uuid}, (err, tour) => {
-          if (err)
-            throw err;
-
-          console.log(tour.htmlContent);
-        });
+      if (pathname === '/api/tours/getTour'.toLowerCase()) {
+        const id = params.get('id'); // TODO: check id first
+        collection.findOne({ id })
+          .then(tour => {
+            res.writeHead(200, {
+              // 'Content-Length': Buffer.byteLength(tour.htmlContent),
+              'Content-type': 'text/plain'
+            });
+            res.end(tour.htmlContent);
+          })
+          .catch(err => {
+            console.error(err.message);
+            res.writeHead(404, 'Tour is not found');
+            res.end();
+          });
       } else {
-        console.log('WRONG*****************');
+        console.error(`API request pathname=${parsedUrl.pathname} cannot be processed.`);
+        res.writeHead(400, 'Bad request: no api provided');
+        res.end();
       }
+
+    } else if (method === 'PUT') {
+
+      if (pathname === '/api/tours/createTour'.toLowerCase()) {
+        const id = params.get('id');
+        let htmlContent = [];
+        req.on('data', chunk => {
+          htmlContent.push(chunk);
+        });
+        req.on('end', () => {
+          htmlContent = Buffer.concat(htmlContent).toString();
+          collection.insertOne({id, htmlContent})
+            .then(r => {
+              res.writeHead(200);
+              res.end();
+            })
+            .catch(err => {
+              console.error(err.message);
+              res.writeHead(404, 'Tour is not created');
+              res.end();
+            });
+        });
+
+      } else if (pathname === '/api/tours/updateTour'.toLowerCase()) {
+        const id = params.get('id');
+        let htmlContent = [];
+        req.on('data', chunk => {
+          htmlContent.push(chunk);
+        });
+        req.on('end', () => {
+          htmlContent = Buffer.concat(htmlContent).toString();
+          collection.findOneAndUpdate({ id }, {$set: { htmlContent }})
+            .then(r => {
+              res.writeHead(200);
+              res.end();
+            })
+            .catch(err => {
+              console.error(err.message);
+              res.writeHead(404, 'Tour is not updated');
+              res.end();
+            });
+        });
+      }
+
+    } else if (method === 'DELETE') {
+      const id = params.get('id');
+      collection.findOneAndDelete({ id })
+        .then(r => {
+          res.writeHead(200);
+          res.end();
+        })
+        .catch(err => {
+          console.error(err.message);
+          res.writeHead(404, 'Tour is not updated');
+          res.end();
+        });
+
+
     } else {
-      console.log(`Unsupported method ${mothod}`)
+      console.error(`Unsupported method ${method}.`);
+      res.writeHead(400, `Unsupported method ${method}.`);
+      res.end();
     }
 
-
-
-
-
-    res.writeHead(200);
-    res.end(`Response from ${port}`);
   });
+
 
   server.listen(port, () => {
     console.log(`Server is started on https://localhost:${port}.`);
   });
 
+
   server.on('close', () => {
     mongoClient.close();
     console.log(`Server https://localhost:${port} is stopped.`);
   });
+
 }).catch(err => {
   console.log(err); // cert files are not found
 });
-
-
-// MongoClient.connect(serverDBUrl, function(err, client) {
-//   if (err) {
-//     console.log(`Connection to DB server "${serverDBUrl}" is failed.`);
-//     return;
-//   }
-//
-//   console.log(`Connected successfully to server ${serverDBUrl}.`);
-//
-//   const db = client.db(dbName);
-//   const collection = db.collection(collectionName);
-//
-//   const uuid = '123-456';
-//   collection.findOne({id: uuid}, (err, tour) => {
-//     if (err)
-//       throw err;
-//
-//     console.log(tour.htmlContent);
-//   });
-//
-//   client.close();
-//
-// });
-
-
-
-// https.createServer(httpsOptions,(req, res) => {
-//   res.writeHead(200);
-//   res.end(`Response from ${port}`);
-// }).listen(port, () => {
-//   console.log(`Server is started on https://localhost:${port}`);
-// });
