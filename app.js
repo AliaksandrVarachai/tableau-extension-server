@@ -30,6 +30,11 @@ Promise.all([
     const pathname = parsedUrl.pathname.toLowerCase();
     const params = new URLSearchParams(parsedUrl.search);
 
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Accept', 'application/json');
+
     if (method === 'GET') {
       if (pathname === '/api/tours/getTour'.toLowerCase()) {
         const id = params.get('id'); // TODO: check id first
@@ -37,9 +42,9 @@ Promise.all([
           .then(tour => {
             res.writeHead(200, {
               // 'Content-Length': Buffer.byteLength(tour.htmlContent),
-              'Content-type': 'text/plain'
+              'Content-Type': 'application/json'
             });
-            res.end(tour.htmlContent);
+            res.end(JSON.stringify(tour));
           })
           .catch(err => {
             console.error(err.message);
@@ -56,15 +61,15 @@ Promise.all([
 
       if (pathname === '/api/tours/createTour'.toLowerCase()) {
         const id = params.get('id');
-        let htmlContent = [];
+        let body = [];
         req.on('data', chunk => {
-          htmlContent.push(chunk);
+          body.push(chunk);
         });
         req.on('end', () => {
-          htmlContent = Buffer.concat(htmlContent).toString();
-          collection.insertOne({id, htmlContent})
+          const tour = JSON.parse(Buffer.concat(body).toString());
+          collection.insertOne(tour)
             .then(r => {
-              res.writeHead(200);
+              res.writeHead(204);
               res.end();
             })
             .catch(err => {
@@ -76,15 +81,15 @@ Promise.all([
 
       } else if (pathname === '/api/tours/updateTour'.toLowerCase()) {
         const id = params.get('id');
-        let htmlContent = [];
+        let body = [];
         req.on('data', chunk => {
-          htmlContent.push(chunk);
+          body.push(chunk);
         });
         req.on('end', () => {
-          htmlContent = Buffer.concat(htmlContent).toString();
-          collection.findOneAndUpdate({ id }, {$set: { htmlContent }})
+          const tour = JSON.parse(Buffer.concat(body).toString());
+          collection.findOneAndUpdate({ id }, {$set: {htmlContent: tour.htmlContent}})
             .then(r => {
-              res.writeHead(200);
+              res.writeHead(204);
               res.end();
             })
             .catch(err => {
@@ -99,14 +104,18 @@ Promise.all([
       const id = params.get('id');
       collection.findOneAndDelete({ id })
         .then(r => {
-          res.writeHead(200);
+          res.writeHead(204);
           res.end();
         })
         .catch(err => {
           console.error(err.message);
-          res.writeHead(404, 'Tour is not updated');
+          res.writeHead(404, 'Tour is not deleted');
           res.end();
         });
+
+    } else if (method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
 
 
     } else {
